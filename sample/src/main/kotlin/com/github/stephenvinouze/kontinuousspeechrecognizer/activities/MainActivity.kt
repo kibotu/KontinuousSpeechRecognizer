@@ -1,12 +1,16 @@
 package com.github.stephenvinouze.kontinuousspeechrecognizer.activities
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -16,8 +20,12 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.github.stephenvinouze.core.interfaces.RecognitionCallback
 import com.github.stephenvinouze.core.managers.KontinuousRecognitionManager
 import com.github.stephenvinouze.core.models.RecognitionStatus
+import com.github.stephenvinouze.kontinuousspeechrecognizer.AudioUtils.muteAudio
+import com.github.stephenvinouze.kontinuousspeechrecognizer.LanguageDetailsChecker
 import com.github.stephenvinouze.kontinuousspeechrecognizer.R
 import timber.log.Timber
+import java.util.*
+
 
 class MainActivity : AppCompatActivity(), RecognitionCallback {
 
@@ -26,6 +34,7 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
          * Put any keyword that will trigger the speech recognition
          */
         private const val ACTIVATION_KEYWORD = "OK test"
+        private val TAG = MainActivity::class.java.simpleName
         private const val RECORD_AUDIO_REQUEST_CODE = 101
     }
 
@@ -50,6 +59,29 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), RECORD_AUDIO_REQUEST_CODE)
         }
+
+        val detailsIntent = Intent(RecognizerIntent.ACTION_GET_LANGUAGE_DETAILS)
+        sendOrderedBroadcast(detailsIntent, null, LanguageDetailsChecker().apply {
+            doAfterReceive = object : LanguageDetailsChecker.OnLanguageDetailsListener {
+                override fun onLanguageDetailsReceived(receiver: LanguageDetailsChecker) {
+                    receiver.languagePreference?.let { Log.v(TAG, "preferred: $it") }
+                    receiver.supportedLanguages?.let { Log.v(TAG, "supported: $it") }
+
+                    receiver.supportedLanguages?.forEach {
+                        Log.v(TAG, "supported: ${it.first} - ${it.second}")
+                    }
+
+                    receiver.languagePreference?.let {
+
+                        val locale = Locale(it.replace("-", "_"))
+                        Log.v(TAG, "preferred: $it -> ${locale.language}_${locale.country} [${locale.displayName}]")
+                    }
+                }
+
+            }
+        }, null, Activity.RESULT_OK, null, null)
+
+
     }
 
     override fun onDestroy() {
@@ -71,6 +103,7 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
     }
 
     private fun startRecognition() {
+        muteAudio(true, this)
         progressBar.isIndeterminate = false
         progressBar.visibility = View.VISIBLE
         recognitionManager.startRecognition()
@@ -80,6 +113,7 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
         progressBar.isIndeterminate = true
         progressBar.visibility = View.INVISIBLE
         recognitionManager.stopRecognition()
+        muteAudio(false, this)
     }
 
     private fun getErrorText(errorCode: Int): String {

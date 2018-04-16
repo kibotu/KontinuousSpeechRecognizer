@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import com.github.stephenvinouze.core.interfaces.RecognitionCallback
 import com.github.stephenvinouze.core.models.RecognitionStatus
 
@@ -18,6 +19,8 @@ class KontinuousRecognitionManager(private val context: Context,
                                    private val shouldMute: Boolean? = false,
                                    private val callback: RecognitionCallback? = null) : RecognitionListener {
 
+    val TAG = KontinuousRecognitionManager::class.java.simpleName
+
     var recognizerIntent: Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
 
     private var isActivated: Boolean = false
@@ -26,10 +29,12 @@ class KontinuousRecognitionManager(private val context: Context,
     private var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     init {
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES, true)
+
 
         initializeRecognizer()
     }
@@ -123,11 +128,17 @@ class KontinuousRecognitionManager(private val context: Context,
     override fun onResults(results: Bundle) {
         val matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val scores = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+
+
         if (matches != null) {
+
+            Log.v(TAG, "word: $matches")
+
             if (isActivated) {
                 isActivated = false
                 callback?.onResults(matches, scores)
             } else {
+
                 matches.forEach {
                     if (it.contains(other = activationKeyword, ignoreCase = true)) {
                         isActivated = true

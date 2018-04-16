@@ -19,6 +19,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".LanguageDetailsChecker"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.TTS_DATA_INSTALLED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
