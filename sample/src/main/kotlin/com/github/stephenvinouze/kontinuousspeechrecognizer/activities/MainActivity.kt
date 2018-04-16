@@ -60,6 +60,10 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), RECORD_AUDIO_REQUEST_CODE)
         }
 
+        getSupportedLanguages()
+    }
+
+    private fun getSupportedLanguages() {
         val detailsIntent = Intent(RecognizerIntent.ACTION_GET_LANGUAGE_DETAILS)
         sendOrderedBroadcast(detailsIntent, null, LanguageDetailsChecker().apply {
             doAfterReceive = object : LanguageDetailsChecker.OnLanguageDetailsListener {
@@ -80,8 +84,6 @@ class MainActivity : AppCompatActivity(), RecognitionCallback {
 
             }
         }, null, Activity.RESULT_OK, null, null)
-
-
     }
 
     override fun onDestroy() {

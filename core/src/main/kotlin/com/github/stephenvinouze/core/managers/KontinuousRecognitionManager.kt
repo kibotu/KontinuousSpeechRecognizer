@@ -10,6 +10,7 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import com.github.stephenvinouze.core.interfaces.RecognitionCallback
 import com.github.stephenvinouze.core.models.RecognitionStatus
+import java.util.*
 
 /**
  * Created by stephenvinouze on 16/05/2017.
@@ -33,7 +34,11 @@ class KontinuousRecognitionManager(private val context: Context,
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES, true)
+
+        val locale = Locale.US
+        val languageTag = "${locale.language}_${locale.country}"
+        Log.v(TAG, "Set language $languageTag")
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES, languageTag)
 
 
         initializeRecognizer()
@@ -133,6 +138,7 @@ class KontinuousRecognitionManager(private val context: Context,
         if (matches != null) {
 
             Log.v(TAG, "word: $matches")
+            callback?.onResults(matches, scores)
 
             if (isActivated) {
                 isActivated = false
